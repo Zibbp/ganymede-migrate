@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  ganymede-migrate:
+    container_name: ganymede-migrate
+    image: ghcr.io/zibbp/ganymede-migrate:master
+    environment:
+      - CERES_HOST=http://IP:PORT
+      - CERES_USERNAME=user
+      - CERES_PASSWORD=pass
+      - GANYMEDE_HOST=http://IP:PORT
+      - GANYMEDE_USERNAME=admin
+      - GANYMEDE_PASSWORD=ganymede
+#      - SHOULD_RENAME=true
+    volumes:
+      - ./data:/data
+      - /path/to/vods:/vods
