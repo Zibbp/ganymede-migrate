@@ -221,6 +221,14 @@ func (s *Service) CreateVod(vod ceres.VOD, vID string, channel Channel) error {
 }
 
 func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) error {
+	// Create new vod directory
+	// https://github.com/Zibbp/ganymede-migrate/issues/1
+	newVodDir := fmt.Sprintf("/vods/%s/%s_%s", channel.Name, vod.ID, vID)
+	err := os.MkdirAll(newVodDir, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create new vod directory: %v", err)
+	}
+
 	var newthumbnailPath string
 	if vod.ThumbnailPath != "" {
 		newthumbnailPath = fmt.Sprintf("/vods/%s/%s/%s-thumbnail.jpg", channel.Name, vod.ID, vod.ID)
@@ -288,7 +296,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 		newinfoPath = ""
 	}
 	// Folder rename
-	err := os.Rename(fmt.Sprintf("/vods/%s/%s", channel.Name, vod.ID), fmt.Sprintf("/vods/%s/%s_%s", channel.Name, vod.ID, vID))
+	err = os.Rename(fmt.Sprintf("/vods/%s/%s", channel.Name, vod.ID), fmt.Sprintf("/vods/%s/%s_%s", channel.Name, vod.ID, vID))
 	if err != nil {
 		log.Printf("failed to rename vod folder: %v", err)
 	}
