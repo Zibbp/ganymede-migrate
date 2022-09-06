@@ -43,37 +43,51 @@ func main() {
 	var failedVods []ceres.VOD
 
 	shouldRename := os.Getenv("SHOULD_RENAME")
+	shouldDelete := os.Getenv("SHOULD_DELETE")
 
 	for _, vod := range vods {
-		// Get channel from Ganymede
-		channel, err := ganymedeService.GetChannel(vod.Channel.Login)
-		if err != nil {
-			log.Printf("Skipping VOD: %s because of: GetChannel failed: %v", vod.ID, err)
-			failedVods = append(failedVods, vod)
-			continue
-		}
-		// Generate UUID for VOD creation
-		vID, err := uuid.NewUUID()
-		if err != nil {
-			log.Panicf("Failed to generate UUID: %v", err)
-		}
-		// Create VOD in Ganymede
-		err = ganymedeService.CreateVod(vod, vID.String(), channel)
-		if err != nil {
-			if err.Error() == "vod already exists" {
+		if shouldDelete != "true" {
+			// Get channel from Ganymede
+			channel, err := ganymedeService.GetChannel(vod.Channel.Login)
+			if err != nil {
+				log.Printf("Skipping VOD: %s because of: GetChannel failed: %v", vod.ID, err)
+				failedVods = append(failedVods, vod)
 				continue
-			} else {
-				log.Printf("Skipping VOD: %s because of: CreateVod failed: %v", vod.ID, err)
+			}
+			// Generate UUID for VOD creation
+			vID, err := uuid.NewUUID()
+			if err != nil {
+				log.Panicf("Failed to generate UUID: %v", err)
+			}
+			// Create VOD in Ganymede
+			err = ganymedeService.CreateVod(vod, vID.String(), channel)
+			if err != nil {
+				if err.Error() == "vod already exists" {
+					continue
+				} else {
+					log.Printf("Skipping VOD: %s because of: CreateVod failed: %v", vod.ID, err)
+					failedVods = append(failedVods, vod)
+					continue
+				}
+			}
+		}
+		
+		// Rename VOD files for Ganymede
+		// Only run if ENV SHOULD_RENAME is set to true and ENV SHOULD_DELETE is not set
+		if shouldRename == "true" && shouldDelete != "true" {
+			err = ganymedeService.RenameVodFiles(vod, vID.String(), channel)
+			if err != nil {
+				log.Printf("Skipping VOD: %s because of: RenameVodFiles failed: %v", vod.ID, err)
 				failedVods = append(failedVods, vod)
 				continue
 			}
 		}
-		// Rename VOD files for Ganymede
-		// Only run if ENV SHOULD_RENAME is set to true
-		if shouldRename == "true" {
-			err = ganymedeService.RenameVodFiles(vod, vID.String(), channel)
+		// Remove old VOD folders from ceres
+		// Only run if ENV SHOULD_DELETE is set to true
+		if shouldDelete == "true" {
+			err = ganymedeService.RemoveOldFolders(vod, vID.String(), channel)
 			if err != nil {
-				log.Printf("Skipping VOD: %s because of: RenameVodFiles failed: %v", vod.ID, err)
+				log.Printf("Skipping VOD: %s because of: RemoveOldFolders failed: %v", vod.ID, err)
 				failedVods = append(failedVods, vod)
 				continue
 			}

@@ -11,6 +11,7 @@ services:
       - GANYMEDE_USERNAME=admin
       - GANYMEDE_PASSWORD=ganymede
 #      - SHOULD_RENAME=true
+#      - SHOULD_DELETE=true
     volumes:
       - ./data:/data
       - /path/to/vods:/vods
