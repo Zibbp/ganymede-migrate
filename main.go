@@ -46,19 +46,19 @@ func main() {
 	shouldDelete := os.Getenv("SHOULD_DELETE")
 
 	for _, vod := range vods {
+		// Get channel from Ganymede
+		channel, err := ganymedeService.GetChannel(vod.Channel.Login)
+		if err != nil {
+			log.Printf("Skipping VOD: %s because of: GetChannel failed: %v", vod.ID, err)
+			failedVods = append(failedVods, vod)
+			continue
+		}
+		// Generate UUID for VOD creation
+		vID, err := uuid.NewUUID()
+		if err != nil {
+			log.Panicf("Failed to generate UUID: %v", err)
+		}
 		if shouldDelete != "true" {
-			// Get channel from Ganymede
-			channel, err := ganymedeService.GetChannel(vod.Channel.Login)
-			if err != nil {
-				log.Printf("Skipping VOD: %s because of: GetChannel failed: %v", vod.ID, err)
-				failedVods = append(failedVods, vod)
-				continue
-			}
-			// Generate UUID for VOD creation
-			vID, err := uuid.NewUUID()
-			if err != nil {
-				log.Panicf("Failed to generate UUID: %v", err)
-			}
 			// Create VOD in Ganymede
 			err = ganymedeService.CreateVod(vod, vID.String(), channel)
 			if err != nil {
