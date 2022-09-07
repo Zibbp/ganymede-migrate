@@ -221,9 +221,17 @@ func (s *Service) CreateVod(vod ceres.VOD, vID string, channel Channel) error {
 }
 
 func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) error {
+	// Create new vod directory
+	// https://github.com/Zibbp/ganymede-migrate/issues/1
+	newVodDir := fmt.Sprintf("/vods/%s/%s_%s", channel.Name, vod.ID, vID)
+	err := os.MkdirAll(newVodDir, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create new vod directory: %v", err)
+	}
+
 	var newthumbnailPath string
 	if vod.ThumbnailPath != "" {
-		newthumbnailPath = fmt.Sprintf("/vods/%s/%s/%s-thumbnail.jpg", channel.Name, vod.ID, vod.ID)
+		newthumbnailPath = fmt.Sprintf("/vods/%s/%s_%s/%s-thumbnail.jpg", channel.Name, vod.ID, vID, vod.ID)
 		oldThumbnailPath := fmt.Sprintf("/vods/%s", vod.ThumbnailPath)
 		err := os.Rename(oldThumbnailPath, newthumbnailPath)
 		if err != nil {
@@ -234,7 +242,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	}
 	var newwebThumbnailPath string
 	if vod.ThumbnailPath != "" {
-		newwebThumbnailPath = fmt.Sprintf("/vods/%s/%s/%s-web_thumbnail.jpg", channel.Name, vod.ID, vod.ID)
+		newwebThumbnailPath = fmt.Sprintf("/vods/%s/%s_%s/%s-web_thumbnail.jpg", channel.Name, vod.ID, vID, vod.ID)
 		oldWebThumbnailPath := fmt.Sprintf("/vods/%s", vod.WebThumbnailPath)
 		err := os.Rename(oldWebThumbnailPath, newwebThumbnailPath)
 		if err != nil {
@@ -245,7 +253,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	}
 	var newvideoPath string
 	if vod.VideoPath != "" {
-		newvideoPath = fmt.Sprintf("/vods/%s/%s/%s-video.mp4", channel.Name, vod.ID, vod.ID)
+		newvideoPath = fmt.Sprintf("/vods/%s/%s_%s/%s-video.mp4", channel.Name, vod.ID, vID, vod.ID)
 		oldVideoPath := fmt.Sprintf("/vods/%s", vod.VideoPath)
 		err := os.Rename(oldVideoPath, newvideoPath)
 		if err != nil {
@@ -256,7 +264,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	}
 	var newchatPath string
 	if vod.ChatPath != "" {
-		newchatPath = fmt.Sprintf("/vods/%s/%s/%s-chat.json", channel.Name, vod.ID, vod.ID)
+		newchatPath = fmt.Sprintf("/vods/%s/%s_%s/%s-chat.json", channel.Name, vod.ID, vID, vod.ID)
 		oldChatPath := fmt.Sprintf("/vods/%s", vod.ChatPath)
 		err := os.Rename(oldChatPath, newchatPath)
 		if err != nil {
@@ -267,7 +275,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	}
 	var newchatVideoPath string
 	if vod.ChatVideoPath != "" {
-		newchatVideoPath = fmt.Sprintf("/vods/%s/%s/%s-chat.mp4", channel.Name, vod.ID, vod.ID)
+		newchatVideoPath = fmt.Sprintf("/vods/%s/%s_%s/%s-chat.mp4", channel.Name, vod.ID, vID, vod.ID)
 		oldChatVideoPath := fmt.Sprintf("/vods/%s", vod.ChatVideoPath)
 		err := os.Rename(oldChatVideoPath, newchatVideoPath)
 		if err != nil {
@@ -278,7 +286,7 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	}
 	var newinfoPath string
 	if vod.VODInfoPath != "" {
-		newinfoPath = fmt.Sprintf("/vods/%s/%s/%s-info.json", channel.Name, vod.ID, vod.ID)
+		newinfoPath = fmt.Sprintf("/vods/%s/%s_%s/%s-info.json", channel.Name, vod.ID, vID, vod.ID)
 		oldInfoPath := fmt.Sprintf("/vods/%s", vod.VODInfoPath)
 		err := os.Rename(oldInfoPath, newinfoPath)
 		if err != nil {
@@ -287,10 +295,13 @@ func (s *Service) RenameVodFiles(vod ceres.VOD, vID string, channel Channel) err
 	} else {
 		newinfoPath = ""
 	}
-	// Folder rename
-	err := os.Rename(fmt.Sprintf("/vods/%s/%s", channel.Name, vod.ID), fmt.Sprintf("/vods/%s/%s_%s", channel.Name, vod.ID, vID))
+	return nil
+}
+
+func (s *Service) RemoveOldFolders(vod ceres.VOD, vID string, channel Channel) error {
+	err := os.RemoveAll(fmt.Sprintf("/vods/%s/%s", channel.Name, vod.ID))
 	if err != nil {
-		log.Printf("failed to rename vod folder: %v", err)
+		log.Printf("failed to remove vod folder: %v", err)
 	}
 	return nil
 }
